@@ -20,35 +20,41 @@ from keras.layers.core import Dense, Activation, Flatten, Dropout, Lambda
 from keras.layers.convolutional import Convolution2D
 from keras.layers.advanced_activations import ELU  
 
-def generateTrainingData(imgPaths, angles, batch_size=128, validation_flag=False):
+def generateTrainingData(imgPaths, angles, batchSize=128, validationFlag=False):
     '''
     Generator for training data.
     '''
     imgPaths, angles = shuffle(imgPaths, angles)
-    X,y = ([],[])
+    X_data = []
+    y_data = []
     while True:       
         for i in range(len(angles)):
             image = cv2.imread(imgPaths[i])
-            angle = angles[i]
             image = preprocess(image)
-            if not validation_flag:
-                image, angle = distortImage(image, angle)
-            X.append(image)
-            y.append(angle)
-            if len(X) == batch_size:
-                yield (np.array(X), np.array(y))
-                X, y = ([],[])
-                imgPaths, angles = shuffle(imgPaths, angles)
-            # flip horizontally and invert steer angle, if magnitude is > 0.33
-            if abs(angle) > 0.33:
-                image = cv2.flip(image, 1)
-                angle *= -1
-                X.append(image)
-                y.append(angle)
-                if len(X) == batch_size:
-                    yield (np.array(X), np.array(y))
-                    X, y = ([],[])
+            angle = angles[i]
+
+            if not validationFlag: 
+                image = distortImage(image)
+                
+            # flip image horizonatally 
+            if abs(angle) > 0.25:
+                imageFlipped = cv2.flip(image, 1)
+                angleFlipped = angle * -1
+                X_data.append(imageFlipped)
+                y_data.append(angleFlipped)
+                if len(X_data) == batchSize:
+                    yield (np.array(X_data), np.array(y_data))
+                    X_data = []
+                    y_data = []
                     imgPaths, angles = shuffle(imgPaths, angles)
+
+            X_data.append(image)
+            y_data.append(angle)
+            if len(X_data) == batchSize:
+                yield (np.array(X_data), np.array(y_data))
+                X_data = []
+                y_data = []
+                imgPaths, angles = shuffle(imgPaths, angles)
 
 def preprocess(image):
     '''
@@ -67,7 +73,7 @@ def preprocess(image):
         cv2.COLOR_BGR2YUV
     )
 
-def distortImage(image, angle):
+def distortImage(image):
     ''' 
     Distort the image for generating training data to avoid overfitting.
     '''
@@ -91,21 +97,27 @@ def distortImage(image, angle):
         (w,h), 
         borderMode=cv2.BORDER_REPLICATE
     )
-    return (newImage.astype(np.uint8), angle)
+    return newImage.astype(np.uint8)
 
+# Get the training data
 imgPaths = []
 angles = []
 
-pathPrepend = getcwd() + '/udacity_data/'
-csvPath = './udacity_data/driving_log.csv'
+# pick my_data or udacity_data
+pathPrepend = getcwd() + '/my_data/'
+csvPath = './my_data/driving_log.csv'
 
 with open(csvPath, newline='') as f:
     csvData = list(csv.reader(f, skipinitialspace=True, delimiter=',', quoting=csv.QUOTE_NONE))
 
 csvData = csvData[1:]
 for line in csvData:
+
+    # ignore slow data
     if float(line[6]) < 0.1 :
         continue
+
+    # get all three images: center, left and right
     imgPaths.append(pathPrepend + line[0])
     angles.append(float(line[3]))
     imgPaths.append(pathPrepend + line[1])
@@ -116,17 +128,18 @@ for line in csvData:
 imgPaths = np.array(imgPaths)
 angles = np.array(angles)
 
+# images for writeup
 # image = cv2.imread(imgPaths[0])
 # angle = angles[0]
 # # image = preprocess(image)
 # image = cv2.flip(image, 1)
 # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-# # image, angle = distortImage(image, angle)
+# # image, angle = distortImage(image)
 # print(image.squeeze().shape)
 # plt.imshow(image)
 # plt.show()
 
-# print a histogram to see which steering angle ranges are most overrepresented
+# histogram for writeup
 numBins = 25
 avgSamplesPerBin = len(angles)/numBins
 hist, bins = np.histogram(angles, numBins)
@@ -136,13 +149,14 @@ center = (bins[:-1] + bins[1:]) / 2
 # plt.plot((np.min(angles), np.max(angles)), (avgSamplesPerBin, avgSamplesPerBin), 'k-')
 # plt.show()
 
+# reduce the angles that show up a lot
 target = avgSamplesPerBin * .5
 keepProbs = [1.0 if hist[i] < target else 1./(hist[i]/target) for i in range(numBins)]
 removeIndices = [i for i in range(len(angles)) for j in range(numBins) if angles[i] > bins[j] and angles[i] <= bins[j+1] and np.random.rand() > keepProbs[j]]
 imgPaths = np.delete(imgPaths, removeIndices, axis=0)
 angles = np.delete(angles, removeIndices)
 
-# print histogram again to show more even distribution of steering angles
+# histogram again for writeup
 hist, bins = np.histogram(angles, numBins)
 # plt.bar(center, hist, align='center', width=width)
 # plt.plot((np.min(angles), np.max(angles)), (avgSamplesPerBin, avgSamplesPerBin), 'k-')
@@ -152,6 +166,8 @@ X_train, X_test, y_train, y_test = train_test_split(imgPaths, angles, test_size=
 
 print('NUM: ', len(X_train), len(X_test))
 model = Sequential()
+
+# Convolutional Neural Netwrok
 
 # Normalize
 model.add(Lambda(lambda x: x/127.5 - 1.0,input_shape=(66,200,3)))
@@ -189,20 +205,20 @@ model.compile(optimizer=Adam(lr=1e-4), loss='mse')
 trainGenerator = generateTrainingData(
     X_train, 
     y_train, 
-    validation_flag=False, 
-    batch_size=64
+    validationFlag=False, 
+    batchSize=64
 )
 validGenerator = generateTrainingData(
     X_train, 
     y_train, 
-    validation_flag=True, 
-    batch_size=64
+    validationFlag=True, 
+    batchSize=64
 )
 testGenerator = generateTrainingData(
     X_test, 
     y_test, 
-    validation_flag=True, 
-    batch_size=64
+    validationFlag=True, 
+    batchSize=64
 )
 
 checkpoint = ModelCheckpoint('model{epoch:02d}.h5')

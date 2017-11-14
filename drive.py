@@ -91,9 +91,6 @@ def telemetry(sid, data):
         print(transformed_image_array.shape)
         steering_angle = float(model.predict(transformed_image_array, batch_size=1))
         throttle = controller.update(float(speed))
-        # throttle = 0.2
-        # if float(speed) < 10:
-        #     throttle = 1
         print(steering_angle, throttle)
         send_control(steering_angle, throttle)
         if args.image_folder != '':
