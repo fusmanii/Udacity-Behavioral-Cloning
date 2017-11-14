@@ -8,6 +8,7 @@
 
 [architecture]: https://devblogs.nvidia.com/parallelforall/wp-content/uploads/2016/08/cnn-architecture-624x890.png "nVidia model"
 [finalVideo]: ./writeup_data/final_run.gif "Final Run Video"
+[recoveryVideo]: ./writeup_data/recovery.gif "Recovery Video"
 
 **Behavioral Cloning Project**
 
@@ -162,8 +163,7 @@ I then recorded the vehicle recovering from the left side and right sides of the
 
 Here is the video demonstrating the recovery:
 
-![Final](writeup_data/recover.mp4)
-<video src="writeup_data/recover.mp4">a video</video>
+![recoveryVideo]
 
 Before augmenting or training I found the distribution of angles in the training data. This is what the distribution looked like:
 ![image7]
