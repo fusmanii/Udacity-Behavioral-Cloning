@@ -8,7 +8,7 @@
 
 [architecture]: https://devblogs.nvidia.com/parallelforall/wp-content/uploads/2016/08/cnn-architecture-624x890.png "nVidia model"
 [finalVideo]: ./writeup_data/final_run.gif "Final Run Video"
-[recoveryVideo]: ./writeup_data/recovery.gif "Recovery Video"
+[recoveryVideo]: ./writeup_data/recover.gif "Recovery Video"
 
 **Behavioral Cloning Project**
 
@@ -111,8 +111,6 @@ The final step was to run the simulator to see how well the car was driving arou
 At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
 
 ![finalVideo]
-
-<img src="writeup_data/final_run.gif">a video</img>
 
 #### 2. Final Model Architecture
 
