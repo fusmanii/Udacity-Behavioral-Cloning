@@ -29,8 +29,7 @@ def generateTrainingData(imgPaths, angles, batchSize=128, validationFlag=False):
     y_data = []
     while True:       
         for i in range(len(angles)):
-            image = cv2.imread(imgPaths[i])
-            image = preprocess(image)
+            image = preprocess(cv2.imread(imgPaths[i]))
             angle = angles[i]
 
             if not validationFlag: 
@@ -38,10 +37,8 @@ def generateTrainingData(imgPaths, angles, batchSize=128, validationFlag=False):
                 
             # flip only images that have high enough angle
             if abs(angle) > 0.25:
-                imageFlipped = cv2.flip(image, 1)
-                angleFlipped = angle * -1
-                X_data.append(imageFlipped)
-                y_data.append(angleFlipped)
+                X_data.append(cv2.flip(image, 1))
+                y_data.append(angle * -1)
                 if len(X_data) == batchSize:
                     yield (np.array(X_data), np.array(y_data))
                     X_data = []
@@ -81,8 +78,11 @@ def distortImage(image):
     
     # change the brightness by random amount
     amount = np.random.randint(-25, 25)
-    mask = ((newImage[:,:,0] + amount) > 255) if amount > 0 else ((newImage[:,:,0] + amount) < 0)
-    newImage[:,:,0] += np.where(mask, 0, amount)
+    newImage[:,:,0] += np.where(
+        ((newImage[:,:,0] + amount) > 255) if amount > 0 else ((newImage[:,:,0] + amount) < 0), 
+        0, 
+        amount
+    )
    
     # add random shift in the image
     h,w,_ = newImage.shape
