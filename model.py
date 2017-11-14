@@ -36,7 +36,7 @@ def generateTrainingData(imgPaths, angles, batchSize=128, validationFlag=False):
             if not validationFlag: 
                 image = distortImage(image)
                 
-            # flip image horizonatally 
+            # flip only images that have high enough angle
             if abs(angle) > 0.25:
                 imageFlipped = cv2.flip(image, 1)
                 angleFlipped = angle * -1
